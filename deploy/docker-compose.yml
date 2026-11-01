@@ -1,0 +1,22 @@
+# Carnet de suivi MEMB — derrière le Traefik de n8n (même réseau, certificat HTTPS automatique)
+services:
+  carnet:
+    build: https://github.com/tradigt777/carnet-memb.git#main
+    image: carnet-memb:latest
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./data:/data
+    networks:
+      - n8n_default
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=n8n_default
+      - traefik.http.routers.carnet.rule=Host(`${DOMAIN}`)
+      - traefik.http.routers.carnet.entrypoints=websecure
+      - traefik.http.routers.carnet.tls=true
+      - traefik.http.routers.carnet.tls.certresolver=mytlschallenge
+      - traefik.http.services.carnet.loadbalancer.server.port=3000
+networks:
+  n8n_default:
+    external: true

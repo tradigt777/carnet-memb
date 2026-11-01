@@ -21,7 +21,7 @@ const PUB = path.join(__dirname, 'public');
 const log = (...a) => console.log(new Date().toISOString(), ...a);
 
 const app = express();
-app.set('trust proxy', 'loopback');
+app.set('trust proxy', process.env.TRUST_PROXY || 'loopback');
 app.disable('x-powered-by');
 
 /* En-têtes de sécurité */
@@ -295,6 +295,6 @@ function bootstrapOwner() {
 if (require.main === module) {
   bootstrapOwner();
   backup.schedule(log);
-  app.listen(PORT, '127.0.0.1', () => log(`Carnet MEMB en ligne sur ${BASE_URL} (port ${PORT})`));
+  app.listen(PORT, process.env.HOST || '127.0.0.1', () => log(`Carnet MEMB en ligne sur ${BASE_URL} (port ${PORT})`));
 }
 module.exports = { app, bootstrapOwner };
