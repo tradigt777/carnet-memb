@@ -52,6 +52,7 @@ app.get('/', (req, res) => { const u = auth.userFromReq(req); res.redirect(u ? '
 app.get('/login', page('login.html'));
 app.get('/mot-de-passe', page('login.html'));
 app.get('/bienvenue', page('login.html'));
+app.get('/confidentialite', page('confidentialite.html'));
 app.get('/compte', (req, res) => auth.userFromReq(req) ? res.sendFile(path.join(PUB, 'login.html')) : res.redirect('/login'));
 app.get('/app', (req, res) => { const u = auth.userFromReq(req); if (!u) return res.redirect('/login?next=/app'); res.setHeader('Cache-Control', 'no-cache'); res.sendFile(path.join(PUB, 'app.html')); });
 app.get('/admin', (req, res) => { const u = auth.userFromReq(req); if (!u) return res.redirect('/login?next=/admin'); if (!acl.MANAGERS.includes(u.role)) return res.redirect('/app'); res.setHeader('Cache-Control', 'no-cache'); res.sendFile(path.join(PUB, 'admin.html')); });

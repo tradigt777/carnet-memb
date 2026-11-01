@@ -12,7 +12,7 @@ ACT['add-member']=()=>{location.href='/admin#nouveau'};
 /* Section « Mon compte » dans les paramètres (équipe) et dans les réglages (parents) */
 function accountCard(){const m=(window.MEMB_ONLINE&&window.MEMB_ONLINE.me())||{};const mgr=['admin','coordinatrice'].includes(m.role);
   return `<div class="section-t">Mon compte</div><div class="card stack" style="gap:10px"><div class="small"><b>${esc(m.name||'')}</b><div class="muted">${esc(m.email||'')} · ${esc(ROLES[m.role]||m.role||'')}</div></div>
-  <div class="row" style="gap:8px"><a class="btn ghost sm" href="/compte">${I.gear}Changer mon mot de passe</a>${mgr?`<a class="btn sm" href="/admin">${I.team}Panneau d’administration</a>`:''}<a class="btn ghost sm" href="/logout" style="color:var(--cor-ink)">Se déconnecter</a></div></div>`}
+  <div class="row" style="gap:8px"><a class="btn ghost sm" href="/compte">${I.gear}Changer mon mot de passe</a>${mgr?`<a class="btn sm" href="/admin">${I.team}Panneau d’administration</a>`:''}<a class="btn ghost sm" href="/logout" style="color:var(--cor-ink)">Se déconnecter</a></div><a class="small" href="/confidentialite" target="_blank" rel="noopener">Politique de confidentialité</a></div>`}
 const _vParams0=vParams;
 vParams=function(){const h=_vParams0();const i=h.indexOf('<div class="section-t">');return i<0?h+accountCard():h.slice(0,i)+accountCard()+h.slice(i)};
 const _paParams0=paParams;
