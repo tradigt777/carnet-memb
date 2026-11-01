@@ -12,6 +12,9 @@ const acl = require('./lib/acl');
 const auth = require('./lib/auth');
 const mail = require('./lib/mail');
 const backup = require('./lib/backup');
+const notifyLib = require('./lib/notify');
+const push = require('./lib/push');
+const route = require('./lib/route');
 const { db, getDoc, listCol, setDoc, delDoc, deepMerge, isDocPath, isColPath, audit, DATA_DIR } = store;
 
 const PORT = Number(process.env.PORT || 3000);
@@ -140,6 +143,7 @@ app.post('/api/db', json, needUser, (req, res) => {
     else setDoc(p, effData, u.id);
     notify(p);
     res.json({ ok: true });
+    if (effOp !== 'delete') notifyLib.afterWrite(u, p, existing, getDoc(p), notify);
   } catch (e) { fail(res, e); }
 });
 
@@ -160,6 +164,32 @@ function notify(p) {
     if (acl.canRead(u, p) || (isChildDoc && u.role !== 'parent')) c.res.write(`data: ${JSON.stringify({ p })}\n\n`);
   }
 }
+
+/* Notifications sur le téléphone */
+app.get('/sw.js', (req, res) => { res.setHeader('Service-Worker-Allowed', '/'); res.setHeader('Cache-Control', 'no-cache'); res.sendFile(path.join(PUB, 'sw.js')); });
+app.get('/api/push/key', needUser, (req, res) => res.json({ key: push.publicKey, n: push.count(req.u.id) }));
+app.post('/api/push/subscribe', json, needUser, (req, res) => { try { push.subscribe(req.u.id, req.body.sub, req.headers['user-agent']); res.json({ ok: true, n: push.count(req.u.id) }); } catch (e) { res.status(400).json({ message: e.message }); } });
+app.post('/api/push/unsubscribe', json, needUser, (req, res) => { push.unsubscribe(req.u.id, String(req.body.endpoint || '')); res.json({ ok: true, n: push.count(req.u.id) }); });
+app.post('/api/push/test', needUser, async (req, res) => res.json({ n: await push.toUser(req.u.id, { title: 'Carnet MEMB', body: 'Les notifications fonctionnent sur cet appareil.', url: '/app', tag: 'test' }) }));
+
+/* Distance routière entre deux adresses (forfait kilométrique) */
+app.post('/api/route', json, needUser, needRole('admin', 'coordinatrice', 'intervenante'), async (req, res) => {
+  const pairs = Array.isArray(req.body.pairs) ? req.body.pairs.slice(0, 40) : [[req.body.from, req.body.to]];
+  try { const out = []; for (const [a, b] of pairs) out.push(await route.distance(String(a || '').slice(0, 300), String(b || '').slice(0, 300))); res.json({ results: out }); }
+  catch (e) { res.status(502).json({ message: 'Calcul de distance indisponible pour le moment.' }); }
+});
+
+/* Rappels : aperçu des prochains envois (équipe) */
+app.get('/api/rappels/apercu', needUser, needRole('admin', 'coordinatrice'), (req, res) => {
+  const now = Date.now(); const out = [];
+  for (const r of db.prepare("SELECT path, data FROM docs WHERE col LIKE 'children/%/sessions'").all()) {
+    const s = JSON.parse(r.data); const cid = r.path.split('/')[1]; if (s.statut === 'annulee' || !s.date) continue;
+    const c = getDoc('children/' + cid); if (!c) continue;
+    const { out: f, start } = notifyLib.firesFor(c, s); if (start < now || start > now + 8 * 864e5) continue;
+    const rc = notifyLib.reach(cid); f.forEach(([k, at]) => { if (at > now) out.push({ cid, prenom: c.prenom, date: s.date, heure: s.heure || '', kind: k, at, parents: rc.length, joignables: rc.filter(x => x.email || x.push).length }); });
+  }
+  res.json({ next: out.sort((a, b) => a.at - b.at).slice(0, 60) });
+});
 
 /* Profils (noms) */
 app.post('/api/profiles', json, needUser, (req, res) => {
@@ -296,6 +326,7 @@ function bootstrapOwner() {
 if (require.main === module) {
   bootstrapOwner();
   backup.schedule(log);
+  notifyLib.schedule();
   app.listen(PORT, process.env.HOST || '127.0.0.1', () => log(`Carnet MEMB en ligne sur ${BASE_URL} (port ${PORT})`));
 }
 module.exports = { app, bootstrapOwner };

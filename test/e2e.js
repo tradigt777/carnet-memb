@@ -89,7 +89,7 @@ const H = { 'X-MEMB': '1', 'Content-Type': 'application/json' };
     ok((await P.req.get(BASE + '/admin', { maxRedirects: 0 })).status() === 302, 'parent : pas d’accès au panneau');
     const html = await P.p.content(); ok(!html.includes('SECRET'), 'parent : aucune donnée secrète dans la page');
     await P.p.screenshot({ path: OUT + '/05-parent-home.png' });
-    await P.p.click('.tabbar [data-v="p-seances"]'); await sleep(500); await P.p.screenshot({ path: OUT + '/06-parent-seances.png' });
+    await P.p.evaluate(() => go('p-seances')); await sleep(500); await P.p.screenshot({ path: OUT + '/06-parent-seances.png' });
     await P.p.evaluate(() => go('p-params')); await sleep(400); await P.p.screenshot({ path: OUT + '/07-parent-params.png', fullPage: true });
     ok(await P.p.evaluate(() => !!document.querySelector('a[href="/logout"]')), 'parent : bouton se déconnecter');
 
