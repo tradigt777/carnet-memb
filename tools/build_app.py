@@ -4,7 +4,7 @@ Usage : python3 tools/build_app.py [chemin/vers/carnet-memb.html]"""
 import sys, re, pathlib
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 src = pathlib.Path(sys.argv[1] if len(sys.argv) > 1 else '/home/claude/carnet-memb.html').read_text(encoding='utf-8')
-online = (ROOT / 'app-src' / 'online.js').read_text(encoding='utf-8') + '\n' + (ROOT / 'app-src' / 'v14.js').read_text(encoding='utf-8')
+online = (ROOT / 'app-src' / 'online.js').read_text(encoding='utf-8') + '\n' + (ROOT / 'app-src' / 'v14.js').read_text(encoding='utf-8') + '\n' + (ROOT / 'app-src' / 'v15.js').read_text(encoding='utf-8')
 
 anchor = '(async function boot(){'
 assert src.count(anchor) == 1, 'point d’insertion introuvable'

@@ -24,6 +24,7 @@ const _bootExtra14=bootExtra;
 bootExtra=function(db){_bootExtra14(db);
   const sub=(col,cb)=>{try{db.collection(col).onSnapshot(q=>{cb(q.docs.map(d=>({id:d.id,...d.data()})));softRender14()},()=>{})}catch(e){}};
   sub('factures',l=>S.factures=l);sub('devoirs',l=>S.devoirs=l);sub('fmsg',l=>{S.fmsg=l.sort((a,b)=>a.at-b.at)});
+  sub('prefs',l=>{S.prefs={};l.forEach(x=>S.prefs[x.id]=x)});
   if(S.role!=='parent'){sub('deplacements',l=>S.deplacements=l);sub('kmjour',l=>{S.kmjour={};l.forEach(x=>S.kmjour[x.id]=x)})}};
 function softRender14(){if(S.dirty)return;if(['p-messages','messages'].includes(S.view.name)&&document.activeElement&&document.activeElement.tagName==='TEXTAREA'){renderChrome();paintThread14();return}render()}
 const meId=()=>actingId()||S.me.id;
@@ -248,22 +249,25 @@ const _unreadMsg14=unreadMsgCount;
 unreadMsgCount=function(){return _unreadMsg14()+fThreads().reduce((a,x)=>a+x.u,0)};
 
 /* ======================= 6. RAPPELS DE SÉANCE ======================= */
-const R_DEF={veille:{on:true,heure:'18:00'},jour:{on:true,avant:120},perso:[],email:true,push:true};
-function rappelsOf(c){const g=S.settings.rappels||{};const r=(c&&c.rappels)||{};return {...R_DEF,...g,...r,veille:{...R_DEF.veille,...(g.veille||{}),...(r.veille||{})},jour:{...R_DEF.jour,...(g.jour||{}),...(r.jour||{})},perso:Array.isArray(r.perso)?r.perso:(g.perso||[])}}
+const R_DEF={veille:{on:true,heure:'18:00'},jour:{on:true,avant:120},perso:[],canal:'auto'};
+S.prefs={};const myPrefs=()=>S.prefs[meId()]||{};
+/* réglage général < réglage de l'enfant < réglage personnel du parent (c === 'me') */
+function rappelsOf(c){const me=c==='me';const kid=me?paChild():c;const g=S.settings.rappels||{};const r=(kid&&kid.rappels)||{};const m=me?(myPrefs().rappels||{}):{};
+  const R={...R_DEF,...g,...r,...m,veille:{...R_DEF.veille,...(g.veille||{}),...(r.veille||{}),...(m.veille||{})},jour:{...R_DEF.jour,...(g.jour||{}),...(r.jour||{}),...(m.jour||{})},perso:Array.isArray(m.perso)?m.perso:Array.isArray(r.perso)?r.perso:(g.perso||[])};
+  if(!['auto','email','both'].includes(R.canal))R.canal='auto';return R}
 const AVANT=[[30,'30 min avant'],[60,'1 h avant'],[120,'2 h avant'],[180,'3 h avant'],[240,'4 h avant']];
 const PERSO=[[15,'15 min'],[45,'45 min'],[90,'1 h 30'],[360,'6 h'],[720,'12 h'],[1440,'1 jour'],[2880,'2 jours'],[4320,'3 jours']];
 const HEURES=['08:00','12:00','17:00','18:00','19:00','20:00','21:00'];
 function rappelsForm(R,pfx){return `<div class="rset"><div><b class="small">La veille</b><div class="tiny muted">Un rappel le jour d’avant</div></div><div class="row" style="gap:6px;flex-wrap:nowrap"><select data-rp="${pfx}" data-k="veille.heure">${HEURES.map(h=>`<option value="${h}" ${R.veille.heure===h?'selected':''}>à ${fmtH(h)}</option>`).join('')}</select><input type="checkbox" class="sw" data-rp="${pfx}" data-k="veille.on" ${R.veille.on?'checked':''}></div></div>
   <div class="rset"><div><b class="small">Le jour même</b><div class="tiny muted">Avant l’heure de la séance</div></div><div class="row" style="gap:6px;flex-wrap:nowrap"><select data-rp="${pfx}" data-k="jour.avant">${AVANT.map(([v,l])=>`<option value="${v}" ${Number(R.jour.avant)===v?'selected':''}>${l}</option>`).join('')}</select><input type="checkbox" class="sw" data-rp="${pfx}" data-k="jour.on" ${R.jour.on?'checked':''}></div></div>
   <div class="rset"><div><b class="small">Rappels personnalisés</b><div class="tiny muted">${(R.perso||[]).length?(R.perso||[]).map(p=>`<span class="chip" style="margin:2px 4px 0 0">${(PERSO.find(x=>x[0]===Number(p.avant))||[0,p.avant+' min'])[1]} avant <button class="btn link" style="padding:0 0 0 4px;min-height:0" data-act="rp-del" data-p="${pfx}" data-m="${p.avant}" aria-label="Retirer">×</button></span>`).join(''):'Aucun'}</div></div><select data-rp="${pfx}" data-k="perso.add"><option value="">+ Ajouter</option>${PERSO.map(([v,l])=>`<option value="${v}">${l} avant</option>`).join('')}</select></div>
-  <div class="rset"><div><b class="small">Par e-mail</b></div><input type="checkbox" class="sw" data-rp="${pfx}" data-k="email" ${R.email!==false?'checked':''}></div>
-  <div class="rset"><div><b class="small">Notification sur le téléphone</b><div class="tiny muted">À activer aussi sur chaque téléphone (ci-dessous)</div></div><input type="checkbox" class="sw" data-rp="${pfx}" data-k="push" ${R.push!==false?'checked':''}></div>`}
-async function rpSave(pfx,R){if(pfx==='g'){const v={...(S.settings.rappels||{}),...R};if(await write('settings/main',{rappels:v},true)){S.settings.rappels=v;toast('Rappels enregistrés');render()}}else{const c=S.children[pfx];if(!c)return;if(await write('children/'+c.id,{rappels:R},true)){c.rappels=R;toast('Rappels enregistrés');render()}}}
-document.addEventListener('change',e=>{const t=e.target;if(!t.matches('[data-rp]'))return;const pfx=t.dataset.rp;const c=S.children[pfx];const R=JSON.parse(JSON.stringify(pfx==='g'?rappelsOf(null):rappelsOf(c)));const k=t.dataset.k;
+  ${pfx==='g'?'':`<div class="rset"><div><b class="small">Comment les recevoir</b><div class="tiny muted">${R.canal==='auto'?'Sur le téléphone s’il est activé ci-dessous, sinon par e-mail : vous recevez toujours vos rappels, sans doublon.':R.canal==='both'?'Par e-mail et sur le téléphone.':'Par e-mail uniquement.'}</div></div><select data-rp="${pfx}" data-k="canal">${[['auto','Téléphone, sinon e-mail'],['email','E-mail'],['both','Les deux']].map(([v,l])=>`<option value="${v}" ${R.canal===v?'selected':''}>${l}</option>`).join('')}</select></div>`}`}
+async function rpSave(pfx,R){if(pfx==='me'){const v={...myPrefs(),rappels:R};if(await write('prefs/'+meId(),v,true)){S.prefs[meId()]=v;toast('Vos rappels sont enregistrés');render()}return}if(pfx==='g'){const v={...(S.settings.rappels||{}),...R};if(await write('settings/main',{rappels:v},true)){S.settings.rappels=v;toast('Rappels enregistrés');render()}}else{const c=S.children[pfx];if(!c)return;if(await write('children/'+c.id,{rappels:R},true)){c.rappels=R;toast('Rappels enregistrés');render()}}}
+document.addEventListener('change',e=>{const t=e.target;if(!t.matches('[data-rp]'))return;const pfx=t.dataset.rp;const c=pfx==='me'?'me':S.children[pfx];const R=JSON.parse(JSON.stringify(pfx==='g'?rappelsOf(null):rappelsOf(c)));const k=t.dataset.k;
   if(k==='perso.add'){const m=Number(t.value);if(!m)return;R.perso=[...(R.perso||[]).filter(p=>Number(p.avant)!==m),{avant:m}].sort((a,b)=>b.avant-a.avant)}
   else{const [a,b]=k.split('.');const v=t.type==='checkbox'?t.checked:(b==='avant'?Number(t.value):t.value);if(b)R[a]={...R[a],[b]:v};else R[a]=v}
   rpSave(pfx,R)});
-ACT['rp-del']=el=>{const pfx=el.dataset.p;const R=JSON.parse(JSON.stringify(pfx==='g'?rappelsOf(null):rappelsOf(S.children[pfx])));R.perso=(R.perso||[]).filter(p=>Number(p.avant)!==Number(el.dataset.m));rpSave(pfx,R)};
+ACT['rp-del']=el=>{const pfx=el.dataset.p;const R=JSON.parse(JSON.stringify(pfx==='g'?rappelsOf(null):rappelsOf(pfx==='me'?'me':S.children[pfx])));R.perso=(R.perso||[]).filter(p=>Number(p.avant)!==Number(el.dataset.m));rpSave(pfx,R)};
 /* notifications sur ce téléphone (Web Push) */
 const b64u=s=>{const p='='.repeat((4-s.length%4)%4);const r=atob((s+p).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from([...r].map(ch=>ch.charCodeAt(0)))};
 const pushOk=()=>'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
@@ -280,7 +284,7 @@ Object.assign(ACT,{'push-on':pushOn,'push-off':pushOff});
 function pushCard(){setTimeout(async()=>{const el=$('#pushState');if(!el)return;const s=await pushState();el.innerHTML=s==='on'?`<span class="chip men">Activées sur ce téléphone</span> <button class="btn link sm" data-act="push-off">Désactiver</button>`:s==='denied'?'<span class="small" style="color:var(--cor-ink)">Bloquées : autorisez-les dans les réglages du téléphone pour ce site.</span>':s==='unsupported'?(isIOS()&&!standalone()?'<span class="small">Sur iPhone : touchez Partager › « Sur l’écran d’accueil », puis ouvrez le carnet depuis cette icône et revenez ici.</span>':'<span class="small muted">Non disponible dans ce navigateur.</span>'):`<button class="btn sm" data-act="push-on">${I.bell}Activer sur ce téléphone</button>`},20);
   return `<div class="section-t">Notifications sur ce téléphone</div><div class="card stack" style="gap:8px"><div class="small muted">${role()==='parent'?'Rappels de séance, messages de l’équipe, devoirs et factures à valider.':'Messages des familles et alertes.'}</div><div id="pushState"><span class="tiny muted">…</span></div></div>`}
 const _paParams14=paParams;
-paParams=function(c){const h=_paParams14(c);const R=rappelsOf(c);const card=`<div class="section-t">Rappels de séance</div><div class="card" style="padding:4px 16px">${rappelsForm(R,c.id)}</div>${pushCard()}`;const i=h.indexOf('<div class="section-t">Ce que l’accueil met en avant</div>');return i<0?h+card:h.slice(0,i)+card+h.slice(i)};
+paParams=function(c){const h=_paParams14(c);const own=S.role==='parent';const R=rappelsOf(own?'me':c);const card=`<div class="section-t">Mes rappels de séance</div><div class="card" style="padding:4px 16px">${rappelsForm(R,own?'me':c.id)}</div><p class="tiny muted" style="margin:-4px 0 0">${own?'Ces réglages ne concernent que vous : l’autre parent garde les siens.':'Aperçu : chaque parent règle ses propres rappels.'}</p>${pushCard()}`;const i=h.indexOf('<div class="section-t">Ce que l’accueil met en avant</div>');return i<0?h+card:h.slice(0,i)+card+h.slice(i)};
 const _vParams14=vParams;
 vParams=function(){const h=_vParams14();let add=pushCard();
   if(isManager()){add+=`<div class="section-t">Rappels envoyés aux familles</div><div class="card" style="padding:4px 16px">${rappelsForm(rappelsOf(null),'g')}</div><p class="tiny muted" style="margin:-4px 0 0">Réglage par défaut. Chaque famille peut l’ajuster dans son espace (Réglages).</p><div class="card"><button class="btn ghost sm" data-act="rp-apercu">${I.cal}Voir les prochains rappels</button></div>
@@ -306,7 +310,7 @@ const AXE_RULES=[[1,/lectur|\blire\b|\blu\b|album|livre|histoire|syllab|lettre|\
  [13,/demandé de l|demande de l|demandé une|pictogram|carte pause|besoin|carte oui|carte non/],[14,/tour de rôle|tour de role|chacun son tour|son tour|à deux\b|jeu de société|jeu de societe|regard|interaction/],[15,/émotion|emotion|colère|colere|retour au calme|frustr|\bcrises?\b|respir|punching|pleur|énerv|enerv/]];
 const DOM_AXE={Motricité:10,Communication:14,Attention:5,Régulation:15,Scolaire:null};
 function autoAxes(ch){const out=new Set();if(!ch)return out;const st=chStats(ch);const nrm=x=>String(x||'').toLowerCase();
-  (st.order||[]).forEach(l=>{const a=actByName(l);(a&&Array.isArray(a.axes)?a.axes:[]).forEach(n=>out.add(Number(n)));const txt=nrm(l);let hit=false;AXE_RULES.forEach(([n,rx])=>{if(rx.test(txt)){out.add(n);hit=true}});if(!hit&&a&&DOM_AXE[a.d])out.add(DOM_AXE[a.d])});
+  (st.order||[]).forEach(l=>{const a=actByName(l);if(a&&Array.isArray(a.axes)&&a.axes.length){a.axes.forEach(n=>out.add(Number(n)));return}const txt=nrm(l);let hit=false;AXE_RULES.forEach(([n,rx])=>{if(rx.test(txt)){out.add(n);hit=true}});if(!hit&&a&&DOM_AXE[a.d])out.add(DOM_AXE[a.d])});
   (ch.ev||[]).filter(e=>e.k==='note'&&e.text&&!['vigilance','pistes','message'].includes(e.f)).forEach(e=>{const t=nrm(e.text);AXE_RULES.forEach(([n,rx])=>{if(rx.test(t))out.add(n)})});
   if(st.byCause&&st.byCause.crise)out.add(15);
   return out}

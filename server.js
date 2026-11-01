@@ -15,6 +15,7 @@ const backup = require('./lib/backup');
 const notifyLib = require('./lib/notify');
 const push = require('./lib/push');
 const route = require('./lib/route');
+const jobs = require('./lib/jobs');
 const { db, getDoc, listCol, setDoc, delDoc, deepMerge, isDocPath, isColPath, audit, DATA_DIR } = store;
 
 const PORT = Number(process.env.PORT || 3000);
@@ -185,10 +186,17 @@ app.get('/api/rappels/apercu', needUser, needRole('admin', 'coordinatrice'), (re
   for (const r of db.prepare("SELECT path, data FROM docs WHERE col LIKE 'children/%/sessions'").all()) {
     const s = JSON.parse(r.data); const cid = r.path.split('/')[1]; if (s.statut === 'annulee' || !s.date) continue;
     const c = getDoc('children/' + cid); if (!c) continue;
-    const { out: f, start } = notifyLib.firesFor(c, s); if (start < now || start > now + 8 * 864e5) continue;
-    const rc = notifyLib.reach(cid); f.forEach(([k, at]) => { if (at > now) out.push({ cid, prenom: c.prenom, date: s.date, heure: s.heure || '', kind: k, at, parents: rc.length, joignables: rc.filter(x => x.email || x.push).length }); });
+    const start = notifyLib.parisMs(s.date, s.heure || '09:00'); if (start < now || start > now + 8 * 864e5 || s.absence) continue;
+    const ps = notifyLib.parentsOf(cid);
+    if (!ps.length) out.push({ cid, prenom: c.prenom, date: s.date, heure: s.heure || '', kind: 'aucun', at: start, parents: 0, joignables: 0 });
+    for (const u of ps) { const { out: f, R } = notifyLib.firesFor(c, s, u); const ch = notifyLib.channelsFor(u, R); f.forEach(([k, at]) => { if (at > now) out.push({ cid, prenom: c.prenom, date: s.date, heure: s.heure || '', kind: k, at, parent: u.name, canal: ch.pushOn ? 'notification' : 'e-mail', parents: ps.length, joignables: ps.length }); }); }
   }
   res.json({ next: out.sort((a, b) => a.at - b.at).slice(0, 60) });
+});
+
+/* Familles : comptes parents de chaque enfant (pour le payeur et les familles injoignables) */
+app.get('/api/familles', needUser, needRole('admin', 'coordinatrice'), (req, res) => {
+  res.json({ familles: listCol('children').map(r => ({ cid: r.id, prenom: r.data.prenom || '', payeur: r.data.payeur || null, parents: notifyLib.reach(r.id) })) });
 });
 
 /* Profils (noms) */
@@ -326,7 +334,7 @@ function bootstrapOwner() {
 if (require.main === module) {
   bootstrapOwner();
   backup.schedule(log);
-  notifyLib.schedule();
+  if (!process.env.NO_SCHED) { notifyLib.schedule(); jobs.schedule(notify); }
   app.listen(PORT, process.env.HOST || '127.0.0.1', () => log(`Carnet MEMB en ligne sur ${BASE_URL} (port ${PORT})`));
 }
 module.exports = { app, bootstrapOwner };
