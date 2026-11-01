@@ -1,0 +1,12 @@
+{
+  "name": "Carnet de suivi MEMB",
+  "short_name": "Carnet MEMB",
+  "start_url": "/app",
+  "display": "standalone",
+  "background_color": "#F2F3F7",
+  "theme_color": "#F2F3F7",
+  "lang": "fr",
+  "icons": [
+    { "src": "/_blob/af49164d46b16aee8edf4b726d5397f5", "sizes": "180x180", "type": "image/jpeg" }
+  ]
+}

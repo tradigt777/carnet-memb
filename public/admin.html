@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Administration · Carnet MEMB</title>
+<link rel="icon" href="/_blob/af49164d46b16aee8edf4b726d5397f5">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;400;500;600;700&display=swap">
+<style>
+:root{--navy:#0E2A5C;--bg:#F2F3F7;--surface:#fff;--surface2:#F2F3F7;--fg:#1c1c1e;--muted:#6b6b70;--line:rgba(60,60,67,.14);--men:#1FB394;--men-bg:rgba(43,196,166,.14);--men-ink:#0B7A66;--cor:#EE7B6A;--cor-bg:rgba(238,123,106,.14);--cor-ink:#B4412F;--saf-bg:rgba(242,177,52,.18);--saf-ink:#8A5A00;--azu-bg:rgba(74,157,232,.14);--azu-ink:#1F64A8;--lav-bg:rgba(155,138,239,.16);--lav-ink:#5B49C2;--btn:#0E2A5C}
+@media (prefers-color-scheme:dark){:root{--bg:#000;--surface:#1c1c1e;--surface2:#2c2c2e;--fg:#f2f2f7;--muted:#9a9aa0;--line:rgba(235,235,245,.16);--navy:#9fb8ff;--btn:#3d63c9}}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--fg);font-family:'Readex Pro',-apple-system,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+header{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.hin{max-width:980px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:12px}
+.hin img{width:36px;height:36px;border-radius:10px}.hin b{flex:1;font-size:1rem}
+main{max-width:980px;margin:0 auto;padding:16px 16px 60px}
+a{color:var(--navy);text-decoration:none;font-weight:500}
+h1{font-size:1.6rem;margin:6px 0 4px;letter-spacing:-.02em}.sub{color:var(--muted);font-size:.9rem;margin:0 0 16px}
+.tabs{display:flex;gap:4px;background:var(--surface2);padding:4px;border-radius:12px;margin-bottom:16px;overflow-x:auto}
+.tabs button{border:0;background:none;font:inherit;font-size:.9rem;font-weight:500;padding:8px 14px;border-radius:9px;cursor:pointer;color:var(--fg);white-space:nowrap}
+.tabs button[aria-selected=true]{background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.card{background:var(--surface);border-radius:16px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.05);margin-bottom:14px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.between{justify-content:space-between}
+.btn{display:inline-flex;align-items:center;gap:6px;border:0;border-radius:11px;background:var(--btn);color:#fff;font:inherit;font-size:.9rem;font-weight:600;padding:10px 14px;cursor:pointer;min-height:40px}
+.btn.ghost{background:var(--surface2);color:var(--fg)}.btn.sm{padding:7px 11px;font-size:.82rem;min-height:34px}.btn.danger{background:var(--cor-bg);color:var(--cor-ink)}
+.btn:disabled{opacity:.55}
+input,select{font:inherit;font-size:.95rem;padding:10px 12px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);color:var(--fg);width:100%}
+label.f{display:block;font-size:.82rem;font-weight:500}label.f span{display:block;margin-bottom:5px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media (max-width:640px){.grid{grid-template-columns:1fr}}
+.u{display:flex;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--line)}.u:first-child{border-top:0}
+.av{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-weight:700;flex:none;background:var(--azu-bg);color:var(--azu-ink)}
+.u .b{flex:1;min-width:0}.u .b b{display:block}.small{font-size:.85rem}.muted{color:var(--muted)}.tiny{font-size:.75rem}
+.chip{display:inline-block;font-size:.72rem;font-weight:600;border-radius:999px;padding:3px 9px;background:var(--surface2);color:var(--muted)}
+.chip.admin{background:var(--lav-bg);color:var(--lav-ink)}.chip.coordinatrice{background:var(--azu-bg);color:var(--azu-ink)}.chip.intervenante{background:var(--men-bg);color:var(--men-ink)}.chip.parent{background:var(--saf-bg);color:var(--saf-ink)}.chip.off{background:var(--cor-bg);color:var(--cor-ink)}
+.kids{display:flex;flex-wrap:wrap;gap:8px}.kids label{display:flex;gap:6px;align-items:center;font-size:.88rem;background:var(--surface2);padding:7px 11px;border-radius:999px;cursor:pointer}.kids input{width:auto}
+.banner{padding:12px 14px;border-radius:12px;font-size:.9rem;line-height:1.45;margin-bottom:14px}.banner.ok{background:var(--men-bg);color:var(--men-ink)}.banner.ko{background:var(--cor-bg);color:var(--cor-ink)}.banner.info{background:var(--azu-bg);color:var(--azu-ink)}
+.link{word-break:break-all;font-size:.82rem;background:var(--surface2);padding:10px;border-radius:10px;margin:8px 0;user-select:all}
+table{width:100%;border-collapse:collapse;font-size:.85rem}td,th{text-align:left;padding:8px 6px;border-top:1px solid var(--line);vertical-align:top}th{color:var(--muted);font-weight:500;border-top:0}
+dialog{border:0;border-radius:18px;padding:20px;max-width:520px;width:calc(100% - 32px);background:var(--surface);color:var(--fg)}dialog::backdrop{background:rgba(0,0,0,.35)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#1c1c1e;color:#fff;padding:11px 16px;border-radius:12px;font-size:.9rem;opacity:0;transition:opacity .2s;pointer-events:none;z-index:50;max-width:calc(100% - 32px)}.toast.on{opacity:1}
+</style>
+</head>
+<body>
+<header><div class="hin"><img src="/_blob/af49164d46b16aee8edf4b726d5397f5" alt=""><b>Administration</b><a href="/app">Retour au carnet</a></div></header>
+<main>
+  <h1>Panneau d’administration</h1><p class="sub" id="who"></p>
+  <div class="tabs" role="tablist"><button data-tab="comptes" aria-selected="true">Comptes</button><button data-tab="sauvegardes">Sauvegardes</button><button data-tab="journal">Journal des connexions</button></div>
+  <div id="view"></div>
+</main>
+<dialog id="dlg"></dialog>
+<div class="toast" id="toast"></div>
+<script>
+const $=s=>document.querySelector(s);const H={'Content-Type':'application/json','X-MEMB':'1'};
+const esc=s=>String(s??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+async function api(url,opt={}){const r=await fetch(url,{credentials:'same-origin',...opt,headers:{...H,...(opt.headers||{})}});if(r.status===401){location.href='/login?next=/admin';return}let j={};try{j=await r.json()}catch(e){}if(!r.ok)throw new Error(j.message||'Erreur');return j}
+const toast=t=>{const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('on'),3200)};
+const ROLES={admin:'Super admin',coordinatrice:'Coordinatrice',intervenante:'Intervenante',parent:'Parent'};
+const fmtDate=t=>t?new Date(t).toLocaleString('fr-FR',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}):'jamais';
+const size=n=>n>1e6?(n/1e6).toFixed(1)+' Mo':Math.round(n/1e3)+' ko';
+let ME=null,USERS=[],KIDS=[],TEAM=[],MAIL=false,TAB=location.hash==='#nouveau'?'comptes':'comptes';
+const kidName=id=>{const k=KIDS.find(x=>x.id===id);return k?(k.prenom+' '+(k.nom||'')).trim():id};
+const roleOpts=sel=>Object.entries(ROLES).filter(([k])=>ME.role==='admin'||['intervenante','parent'].includes(k)).map(([k,l])=>`<option value="${k}" ${sel===k?'selected':''}>${l}</option>`).join('');
+const kidsPick=(sel=[])=>`<div class="kids">${KIDS.map(k=>`<label><input type="checkbox" name="kid" value="${esc(k.id)}" ${sel.includes(k.id)?'checked':''}>${esc((k.prenom+' '+(k.nom||'')).trim())}</label>`).join('')||'<span class="small muted">Aucun enfant dans le carnet.</span>'}</div>`;
+
+async function load(){ME=await api('/api/me');$('#who').textContent=`Connecté : ${ME.name} · ${ROLES[ME.role]}`;if(ME.role!=='admin')document.querySelectorAll('[data-tab=sauvegardes],[data-tab=journal]').forEach(b=>b.remove());
+  const [u,k,t]=await Promise.all([api('/api/admin/users'),api('/api/admin/children'),api('/api/admin/team')]);USERS=u.users;MAIL=u.mail;KIDS=k.children;TEAM=t.team;render()}
+function render(){document.querySelectorAll('.tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===TAB));({comptes:vUsers,sauvegardes:vBackups,journal:vAudit}[TAB])()}
+document.querySelector('.tabs').onclick=e=>{const b=e.target.closest('button');if(b){TAB=b.dataset.tab;render()}};
+
+function vUsers(){const groups=['admin','coordinatrice','intervenante','parent'];
+  $('#view').innerHTML=`${MAIL?'':'<div class="banner info">L’envoi d’e-mails n’est pas encore configuré : après chaque création, copie le lien d’invitation affiché et envoie-le à la personne (SMS, WhatsApp…).</div>'}
+  <div class="card"><div class="row between"><b>Nouveau compte</b></div>
+  <form id="nf" class="grid" style="margin-top:12px"><label class="f"><span>Nom et prénom</span><input name="name" required></label><label class="f"><span>E-mail</span><input name="email" type="email" required></label>
+  <label class="f"><span>Rôle</span><select name="role" id="nfRole">${roleOpts('parent')}</select></label>
+  <label class="f" id="nfTeam" style="display:none"><span>Lier à une fiche existante de l’équipe</span><select name="team"><option value="">Nouvelle fiche</option>${TEAM.map(t=>`<option value="${esc(t.id)}">${esc(t.nom)} (${esc(ROLES[t.role]||t.role)})</option>`).join('')}</select></label>
+  <div class="f" id="nfKids" style="grid-column:1/-1"><span class="small" style="font-weight:500">Enfant(s) de ce parent</span><div style="margin-top:6px">${kidsPick()}</div></div>
+  <div style="grid-column:1/-1"><button class="btn">Créer et envoyer l’invitation</button></div></form></div>
+  ${groups.map(g=>{const l=USERS.filter(u=>u.role===g);if(!l.length)return '';return `<div class="card"><b>${ROLES[g]}${l.length>1&&g!=='admin'?'s':''} (${l.length})</b><div style="margin-top:6px">${l.map(uRow).join('')}</div></div>`}).join('')}`;
+  $('#nfRole').onchange=()=>{const par=$('#nfRole').value==='parent';$('#nfKids').style.display=par?'':'none';$('#nfTeam').style.display=par||!TEAM.length?'none':''};
+  $('#nf').onsubmit=async e=>{e.preventDefault();const f=e.target;const b=f.querySelector('button');b.disabled=true;
+    try{const r=await api('/api/admin/users',{method:'POST',body:JSON.stringify({id:f.role.value!=='parent'&&f.team.value?f.team.value:undefined,name:f.name.value,email:f.email.value,role:f.role.value,children:[...f.querySelectorAll('[name=kid]:checked')].map(i=>i.value)})});USERS.push(r.user);TEAM=TEAM.filter(t=>t.id!==r.user.id);showLink(r.user,r);render()}catch(x){toast(x.message)}b.disabled=false}}
+function uRow(u){const st=!u.active?'<span class="chip off">Désactivé</span>':!u.hasPassword?'<span class="chip">Invitation en attente</span>':'';
+  return `<div class="u"><div class="av">${esc((u.name||'?')[0].toUpperCase())}</div><div class="b"><b>${esc(u.name)} ${u.isOwner?'<span class="chip admin">Propriétaire</span>':''} ${st}</b><div class="small muted">${esc(u.email)}${u.role==='parent'&&u.children.length?' · '+u.children.map(kidName).map(esc).join(', '):''}</div><div class="tiny muted">Dernière connexion : ${fmtDate(u.lastLogin)}</div></div>
+  <button class="btn ghost sm" data-edit="${esc(u.id)}">Modifier</button></div>`}
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-edit]');if(b)editUser(USERS.find(u=>u.id===b.dataset.edit))});
+function showLink(u,r){const d=$('#dlg');d.innerHTML=`<h2 style="margin-top:0">${r.sent?'Invitation envoyée':'Lien d’invitation'}</h2><p class="small">${r.sent?`Un e-mail est parti à <b>${esc(u.email)}</b>. Tu peux aussi lui transmettre ce lien directement :`:`Envoie ce lien à <b>${esc(u.name)}</b> pour qu’il ou elle choisisse son mot de passe (valable 7 jours) :`}</p><div class="link">${esc(r.link)}</div><div class="row"><button class="btn" id="cp">Copier le lien</button><button class="btn ghost" id="cl">Fermer</button></div>`;d.showModal();
+  $('#cp').onclick=async()=>{try{await navigator.clipboard.writeText(r.link);toast('Lien copié')}catch(e){toast('Sélectionne le lien et copie-le')}};$('#cl').onclick=()=>d.close()}
+function editUser(u){const d=$('#dlg');d.innerHTML=`<h2 style="margin-top:0">${esc(u.name)}</h2><form id="ef" class="grid"><label class="f"><span>Nom</span><input name="name" value="${esc(u.name)}"></label><label class="f"><span>E-mail</span><input name="email" type="email" value="${esc(u.email)}"></label>
+  <label class="f"><span>Rôle</span><select name="role" ${u.isOwner?'disabled':''}>${roleOpts(u.role)}</select></label><div></div>
+  <div style="grid-column:1/-1;${u.role==='parent'?'':'display:none'}" id="efKids"><span class="small" style="font-weight:500">Enfant(s)</span><div style="margin-top:6px">${kidsPick(u.children)}</div></div>
+  <div class="row" style="grid-column:1/-1"><button class="btn">Enregistrer</button><button type="button" class="btn ghost" id="inv">${u.hasPassword?'Envoyer un lien de nouveau mot de passe':'Renvoyer l’invitation'}</button>${u.isOwner?'':`<button type="button" class="btn ${u.active?'danger':'ghost'}" id="act">${u.active?'Désactiver le compte':'Réactiver le compte'}</button>`}<button type="button" class="btn ghost" id="cl">Fermer</button></div></form>`;d.showModal();
+  const f=$('#ef');f.role.onchange=()=>{$('#efKids').style.display=f.role.value==='parent'?'':'none'};$('#cl').onclick=()=>d.close();
+  const save=async body=>{try{const r=await api('/api/admin/users/'+encodeURIComponent(u.id),{method:'PATCH',body:JSON.stringify(body)});Object.assign(u,r.user);d.close();render();toast('Compte mis à jour')}catch(x){toast(x.message)}};
+  f.onsubmit=e=>{e.preventDefault();save({name:f.name.value,email:f.email.value,role:u.isOwner?undefined:f.role.value,children:[...f.querySelectorAll('[name=kid]:checked')].map(i=>i.value)})};
+  $('#inv').onclick=async()=>{try{const r=await api('/api/admin/users/'+encodeURIComponent(u.id)+'/invite',{method:'POST'});d.close();showLink(u,r)}catch(x){toast(x.message)}};
+  const a=$('#act');if(a)a.onclick=()=>save({active:!u.active})}
+
+async function vBackups(){$('#view').innerHTML='<div class="card small muted">Chargement…</div>';const r=await api('/api/admin/backups');
+  $('#view').innerHTML=`<div class="banner ok">Une sauvegarde complète (données et photos) est faite automatiquement chaque nuit vers 3 h. Les 30 derniers jours sont gardés sur le serveur.</div>
+  <div class="card"><div class="row between"><div><b>Sauvegardes</b><div class="small muted">${r.docs} éléments dans le carnet</div></div><button class="btn" id="bkNow">Sauvegarder maintenant</button></div>
+  <table style="margin-top:10px"><tr><th>Date</th><th>Taille</th><th></th></tr>${r.backups.map(b=>`<tr><td>${fmtDate(b.at)}</td><td>${size(b.size)}</td><td style="text-align:right"><a href="/api/admin/backups/${encodeURIComponent(b.name)}">Télécharger</a></td></tr>`).join('')||'<tr><td colspan="3" class="muted">Aucune sauvegarde pour l’instant.</td></tr>'}</table>
+  <p class="tiny muted">Conseil : télécharge une sauvegarde de temps en temps et garde-la sur ton ordinateur ou un disque externe. Tu peux aussi activer les instantanés automatiques du VPS dans Hostinger.</p></div>
+  <div class="card"><b>Importer des données</b><p class="small muted">Fichier de sauvegarde du carnet (.json), par exemple celui de l’ancienne version. Les éléments du fichier remplacent ceux qui ont le même identifiant ; rien n’est supprimé.</p><label class="btn ghost" style="cursor:pointer">Choisir le fichier<input type="file" accept=".json,application/json" id="imp" hidden></label><div class="small" id="impMsg" style="margin-top:8px"></div></div>`;
+  $('#bkNow').onclick=async e=>{e.target.disabled=true;e.target.textContent='Sauvegarde en cours…';try{await api('/api/admin/backups',{method:'POST'});toast('Sauvegarde faite');vBackups()}catch(x){toast(x.message);e.target.disabled=false}};
+  $('#imp').onchange=async e=>{const f=e.target.files[0];if(!f)return;$('#impMsg').textContent='Import en cours…';try{const r=await fetch('/api/admin/import',{method:'POST',headers:{'X-MEMB':'1','Content-Type':'application/octet-stream'},body:f,credentials:'same-origin'});const j=await r.json();if(!r.ok)throw new Error(j.message);$('#impMsg').textContent=`Import terminé : ${j.docs} éléments et ${j.blobs} photos.`;const k=await api('/api/admin/children');KIDS=k.children}catch(x){$('#impMsg').textContent='Échec : '+x.message}}}
+async function vAudit(){const r=await api('/api/admin/audit');const L={login:'Connexion','login-fail':'Échec de connexion',logout:'Déconnexion',invite:'Invitation envoyée','invite-accepted':'Compte activé','password-reset':'Mot de passe réinitialisé','password-change':'Mot de passe changé',forgot:'Demande « mot de passe oublié »','user-create':'Compte créé','user-update':'Compte modifié',backup:'Sauvegarde','backup-download':'Sauvegarde téléchargée',import:'Import de données','delete-child':'Dossier supprimé'};
+  $('#view').innerHTML=`<div class="card"><table><tr><th>Date</th><th>Qui</th><th>Action</th><th>Détail</th></tr>${r.audit.map(a=>`<tr><td class="small">${fmtDate(a.at)}</td><td>${esc(a.name||(a.uid==='auto'?'Automatique':'—'))}</td><td>${esc(L[a.action]||a.action)}</td><td class="small muted">${esc(a.detail||'')}</td></tr>`).join('')}</table></div>`}
+load().catch(e=>{$('#view').innerHTML=`<div class="banner ko">${esc(e.message)}</div>`});
+</script>
+</body>
+</html>

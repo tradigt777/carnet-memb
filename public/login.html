@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Connexion · Carnet MEMB</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/_blob/af49164d46b16aee8edf4b726d5397f5">
+<link rel="icon" href="/_blob/af49164d46b16aee8edf4b726d5397f5">
+<meta name="theme-color" content="#F2F3F7">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;400;500;600;700&display=swap">
+<style>
+:root{--navy:#0E2A5C;--bg:#F2F3F7;--surface:#fff;--fg:#1c1c1e;--muted:#6b6b70;--line:rgba(60,60,67,.18);--men:#1FB394;--men-bg:rgba(43,196,166,.14);--men-ink:#0B7A66;--cor:#EE7B6A;--cor-bg:rgba(238,123,106,.14);--cor-ink:#B4412F;--fill:rgba(118,118,128,.12)}
+@media (prefers-color-scheme:dark){:root{--bg:#000;--surface:#1c1c1e;--fg:#f2f2f7;--muted:#9a9aa0;--line:rgba(235,235,245,.18);--navy:#9fb8ff;--fill:rgba(118,118,128,.24)}}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--fg);font-family:'Readex Pro',-apple-system,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+main{min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 16px calc(24px + env(safe-area-inset-bottom))}
+.brand{display:flex;align-items:center;gap:12px;margin-bottom:22px}.brand img{width:56px;height:56px;border-radius:14px}
+.brand b{display:block;font-size:1.15rem;color:var(--navy)}.brand span{font-size:.85rem;color:var(--muted)}
+.card{width:100%;max-width:400px;background:var(--surface);border-radius:20px;padding:24px;box-shadow:0 1px 3px rgba(0,0,0,.06),0 8px 30px rgba(14,42,92,.06)}
+h1{font-size:1.4rem;margin:0 0 6px;letter-spacing:-.01em}p.sub{margin:0 0 18px;color:var(--muted);font-size:.92rem;line-height:1.45}
+label{display:block;font-size:.85rem;font-weight:500;margin:14px 0 6px}
+input{width:100%;font:inherit;font-size:1rem;padding:13px 14px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);color:var(--fg);outline:none}
+input:focus{border-color:var(--navy)}
+.pw{position:relative}.pw button{position:absolute;right:6px;top:50%;transform:translateY(-50%);border:0;background:none;color:var(--muted);font:inherit;font-size:.8rem;padding:8px;cursor:pointer}
+button.main{width:100%;margin-top:20px;border:0;border-radius:14px;background:var(--navy);color:#fff;font:inherit;font-size:1rem;font-weight:600;padding:14px;cursor:pointer}
+@media (prefers-color-scheme:dark){button.main{background:#3d63c9}}
+button.main:disabled{opacity:.6}
+.links{margin-top:16px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:.88rem}
+a{color:var(--navy);text-decoration:none;font-weight:500}
+.msg{margin-top:14px;padding:11px 13px;border-radius:12px;font-size:.9rem;line-height:1.4;display:none}.msg.ok{display:block;background:var(--men-bg);color:var(--men-ink)}.msg.ko{display:block;background:var(--cor-bg);color:var(--cor-ink)}
+.hint{font-size:.78rem;color:var(--muted);margin-top:6px}
+footer{margin-top:22px;font-size:.75rem;color:var(--muted);text-align:center;max-width:400px;line-height:1.5}
+</style>
+</head>
+<body>
+<main>
+  <div class="brand"><img src="/_blob/af49164d46b16aee8edf4b726d5397f5" alt=""><div><b>Carnet de suivi</b><span>Mon enfant, Ma bataille</span></div></div>
+  <div class="card" id="card"></div>
+  <footer>Vos informations sont protégées : accès personnel par mot de passe, connexion chiffrée, sauvegarde chaque nuit.</footer>
+</main>
+<script>
+const $=s=>document.querySelector(s);const card=$('#card');const qs=new URLSearchParams(location.search);
+const H={'Content-Type':'application/json','X-MEMB':'1'};
+async function post(url,body){const r=await fetch(url,{method:'POST',headers:H,body:JSON.stringify(body||{}),credentials:'same-origin'});let j={};try{j=await r.json()}catch(e){}if(!r.ok)throw new Error(j.message||'Une erreur est survenue, réessayez.');return j}
+const esc=s=>String(s||'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+function msg(t,ok){const m=$('#msg');m.textContent=t;m.className='msg '+(ok?'ok':'ko')}
+const pwField=(id,label,ac)=>`<label for="${id}">${label}</label><div class="pw"><input type="password" id="${id}" autocomplete="${ac}" required><button type="button" data-show="${id}">Afficher</button></div>`;
+document.addEventListener('click',e=>{const b=e.target.closest('[data-show]');if(!b)return;const i=$('#'+b.dataset.show);i.type=i.type==='password'?'text':'password';b.textContent=i.type==='password'?'Afficher':'Masquer'});
+const next=()=>{const n=qs.get('next');return n&&n.startsWith('/')&&!n.startsWith('//')?n:'/app'};
+
+function viewLogin(){document.title='Connexion · Carnet MEMB';
+  card.innerHTML=`<h1>Connexion</h1><p class="sub">Équipe et familles : connectez-vous avec votre e-mail.</p>
+  <form id="f"><label for="em">E-mail</label><input type="email" id="em" autocomplete="username" required inputmode="email">${pwField('pw','Mot de passe','current-password')}
+  <button class="main" id="go">Se connecter</button><div class="msg" id="msg"></div></form>
+  <div class="links"><a href="/mot-de-passe">Mot de passe oublié ?</a></div>`;
+  $('#f').onsubmit=async e=>{e.preventDefault();$('#go').disabled=true;try{await post('/api/login',{email:$('#em').value,password:$('#pw').value});location.href=next()}catch(x){msg(x.message);$('#go').disabled=false}}}
+function viewForgot(){document.title='Mot de passe oublié · Carnet MEMB';
+  card.innerHTML=`<h1>Mot de passe oublié</h1><p class="sub">Indiquez votre e-mail : vous recevrez un lien pour choisir un nouveau mot de passe.</p>
+  <form id="f"><label for="em">E-mail</label><input type="email" id="em" autocomplete="username" required inputmode="email"><button class="main" id="go">Recevoir le lien</button><div class="msg" id="msg"></div></form>
+  <div class="links"><a href="/login">Retour à la connexion</a></div>`;
+  $('#f').onsubmit=async e=>{e.preventDefault();$('#go').disabled=true;try{const r=await post('/api/forgot',{email:$('#em').value});msg(r.mail===false?'L’envoi d’e-mails n’est pas encore activé : demandez un lien à votre coordinatrice.':'Si un compte existe avec cette adresse, un e-mail vient de partir. Pensez à regarder dans les courriers indésirables.',r.mail!==false)}catch(x){msg(x.message)}$('#go').disabled=false}}
+async function viewToken(t,invite){
+  let info;try{info=await post('/api/token',{token:t})}catch(x){card.innerHTML=`<h1>Lien expiré</h1><p class="sub">${esc(x.message)}</p><div class="links"><a href="/mot-de-passe">Recevoir un nouveau lien</a><a href="/login">Connexion</a></div>`;return}
+  document.title=(invite?'Bienvenue':'Nouveau mot de passe')+' · Carnet MEMB';
+  card.innerHTML=`<h1>${invite?'Bienvenue '+esc(info.name.split(' ')[0]):'Nouveau mot de passe'}</h1><p class="sub">${invite?'Choisissez le mot de passe de votre compte ':'Choisissez un nouveau mot de passe pour '}<b>${esc(info.email)}</b>.</p>
+  <form id="f"><input type="email" value="${esc(info.email)}" autocomplete="username" hidden>${pwField('pw','Mot de passe','new-password')}<div class="hint">Au moins 10 caractères, avec des lettres et au moins un chiffre.</div>${pwField('pw2','Confirmer le mot de passe','new-password')}
+  <button class="main" id="go">${invite?'Créer mon accès':'Enregistrer'}</button><div class="msg" id="msg"></div></form>`;
+  $('#f').onsubmit=async e=>{e.preventDefault();if($('#pw').value!==$('#pw2').value)return msg('Les deux mots de passe ne sont pas identiques.');$('#go').disabled=true;try{await post('/api/token/use',{token:t,password:$('#pw').value});location.href='/app'}catch(x){msg(x.message);$('#go').disabled=false}}}
+function viewAccount(){document.title='Mon mot de passe · Carnet MEMB';
+  card.innerHTML=`<h1>Changer mon mot de passe</h1><p class="sub">Vos autres appareils seront déconnectés.</p>
+  <form id="f">${pwField('cur','Mot de passe actuel','current-password')}${pwField('pw','Nouveau mot de passe','new-password')}<div class="hint">Au moins 10 caractères, avec des lettres et au moins un chiffre.</div>${pwField('pw2','Confirmer','new-password')}
+  <button class="main" id="go">Enregistrer</button><div class="msg" id="msg"></div></form><div class="links"><a href="/app">Retour au carnet</a><a href="/logout">Se déconnecter</a></div>`;
+  $('#f').onsubmit=async e=>{e.preventDefault();if($('#pw').value!==$('#pw2').value)return msg('Les deux mots de passe ne sont pas identiques.');$('#go').disabled=true;try{await post('/api/password',{current:$('#cur').value,password:$('#pw').value});msg('Mot de passe changé.',true)}catch(x){msg(x.message)}$('#go').disabled=false}}
+const p=location.pathname,t=qs.get('t');
+if(p==='/bienvenue'&&t)viewToken(t,true);else if(p==='/mot-de-passe'&&t)viewToken(t,false);else if(p==='/mot-de-passe')viewForgot();else if(p==='/compte')viewAccount();else viewLogin();
+</script>
+</body>
+</html>
