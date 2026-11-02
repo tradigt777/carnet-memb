@@ -43,8 +43,16 @@ const IBAN = 'FR76 3000 6000 0112 3456 7890 189';
     await pI.screenshot({ path: OUT + '/02-intervenante-parametres.png', fullPage: true }); await pI.close();
     /* signature de l'association enregistrée une fois */
     const pC0 = await open(C, '/app'); await ready(pC0); await pC0.evaluate(() => { closeModal(); go('parametres'); ACT['sa-edit'](); }); await sleep(300);
-    const box = await (await pC0.$('#sigA')).boundingBox(); await pC0.mouse.move(box.x + 20, box.y + 120); await pC0.mouse.down(); for (let i = 0; i < 40; i++) await pC0.mouse.move(box.x + 20 + i * 8, box.y + 120 - Math.sin(i / 3) * 40); await pC0.mouse.up();
+    await (await pC0.$('#saFile')).setInputFiles(process.env.SIG_IMG || require('path').join(__dirname, '..', '..', 'signature-alice.png')); await sleep(600);
+    ok(await pC0.evaluate(() => /^data:image\/png/.test(S.saImport || '') && getComputedStyle(document.getElementById('saPrev')).display !== 'none'), 'signature importée depuis une image, fond rendu transparent');
+    await pC0.screenshot({ path: OUT + '/01b-signature-importee.png' });
     await pC0.click('[data-act="sa-save"]'); await sleep(500); await pC0.close();
+    const st = (await (await C.request.post(BASE + '/api/db', { headers: H, data: { op: 'get', path: 'settings/main' } })).json()).data;
+    ok(st && st.signatureAsso && /^data:image\/png/.test(st.signatureAsso.img), 'signature de l’association enregistrée');
+    await C.request.post(BASE + '/api/db', { headers: H, data: { op: 'set', path: 'contrats/auto1', data: { cid: 'zz', statut: 'a_signer', numero: 'T-1', contenu: {} } } });
+    const auto1 = (await (await C.request.post(BASE + '/api/db', { headers: H, data: { op: 'get', path: 'contrats/auto1' } })).json()).data;
+    ok(auto1.signatureAsso && auto1.signatureAsso.img === st.signatureAsso.img, 'contrat envoyé sans signature : le serveur appose celle de l’association');
+    await C.request.post(BASE + '/api/db', { headers: H, data: { op: 'delete', path: 'contrats/auto1' } });
 
     /* 1. la famille crée son espace */
     const P = await ctx(); const pS = await open(P, '/inscription'); await sleep(300);
@@ -92,6 +100,7 @@ const IBAN = 'FR76 3000 6000 0112 3456 7890 189';
     await (await pP.$('#sigK')).scrollIntoViewIfNeeded(); await sleep(200); const sb = await (await pP.$('#sigK')).boundingBox(); await pP.mouse.move(sb.x + 30, sb.y + 100); await pP.mouse.down(); for (let i = 0; i < 35; i++) await pP.mouse.move(sb.x + 30 + i * 8, sb.y + 100 + Math.cos(i / 2) * 30); await pP.mouse.up();
     await pP.check('#sigOk'); await pP.fill('#sigLieu', 'Puteaux'); await pP.click('[data-act="k-sign"]'); await sleep(1200);
     const k2 = (await (await C.request.post(BASE + '/api/db', { headers: H, data: { op: 'get', path: 'contrats/' + k.id } })).json()).data;
+    ok(k2.signatureAsso && k2.signatureAsso.img === st.signatureAsso.img, 'contrat signé des deux parties (association + famille)');
     ok(k2.statut === 'signe' && k2.signatureClient.nom === 'Sophie Moreau' && /^data:image\/png/.test(k2.signatureClient.img) && k2.signatureClient.empreinte.length === 64, 'contrat signé, horodaté, empreinte du texte');
     const reSign = await P.request.post(BASE + '/api/db', { headers: H, data: { op: 'update', path: 'contrats/' + k.id, data: { signatureClient: { img: k2.signatureClient.img } } } });
     ok(reSign.status() === 403, 'un contrat signé ne peut plus être modifié');
