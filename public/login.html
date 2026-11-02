@@ -52,8 +52,18 @@ function viewLogin(){document.title='Connexion · Carnet MEMB';
   card.innerHTML=`<h1>Connexion</h1><p class="sub">Équipe et familles : connectez-vous avec votre e-mail.</p>
   <form id="f"><label for="em">E-mail</label><input type="email" id="em" autocomplete="username" required inputmode="email">${pwField('pw','Mot de passe','current-password')}
   <button class="main" id="go">Se connecter</button><div class="msg" id="msg"></div></form>
-  <div class="links"><a href="/mot-de-passe">Mot de passe oublié ?</a></div>`;
+  <div class="links"><a href="/mot-de-passe">Mot de passe oublié ?</a><a href="/inscription">Nouvelle famille ? Créer mon espace</a></div>`;
   $('#f').onsubmit=async e=>{e.preventDefault();$('#go').disabled=true;try{await post('/api/login',{email:$('#em').value,password:$('#pw').value});location.href=next()}catch(x){msg(x.message);$('#go').disabled=false}}}
+function viewSignup(){document.title='Créer mon espace famille · Carnet MEMB';
+  card.innerHTML=`<h1>Créer mon espace famille</h1><p class="sub">Vous remplirez ensuite, à votre rythme, le dossier d’inscription de votre enfant. Votre contrat sera préparé à partir de ces informations, puis vous le signerez dans l’application.</p>
+  <form id="f"><label for="nm">Votre prénom et votre nom</label><input type="text" id="nm" autocomplete="name" required>
+  <label for="em">E-mail</label><input type="email" id="em" autocomplete="username" required inputmode="email">
+  ${pwField('pw','Mot de passe','new-password')}<div class="hint">Au moins 10 caractères, avec des lettres et au moins un chiffre.</div>${pwField('pw2','Confirmer le mot de passe','new-password')}
+  <input type="text" id="site" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px" aria-hidden="true">
+  <label style="display:flex;gap:10px;align-items:flex-start;font-weight:400;margin-top:16px"><input type="checkbox" id="ok" style="width:20px;height:20px;flex:none;margin-top:2px" required><span class="hint" style="margin:0">J’ai lu la <a href="/confidentialite" target="_blank">politique de confidentialité</a> et j’accepte que mes informations servent à l’accompagnement de mon enfant.</span></label>
+  <button class="main" id="go">Créer mon espace</button><div class="msg" id="msg"></div></form>
+  <div class="links"><a href="/login">J’ai déjà un compte</a></div>`;
+  $('#f').onsubmit=async e=>{e.preventDefault();if($('#pw').value!==$('#pw2').value)return msg('Les deux mots de passe ne sont pas identiques.');$('#go').disabled=true;try{await post('/api/inscription',{name:$('#nm').value,email:$('#em').value,password:$('#pw').value,accepte:$('#ok').checked,site:$('#site').value});location.href='/app'}catch(x){msg(x.message);$('#go').disabled=false}}}
 function viewForgot(){document.title='Mot de passe oublié · Carnet MEMB';
   card.innerHTML=`<h1>Mot de passe oublié</h1><p class="sub">Indiquez votre e-mail : vous recevrez un lien pour choisir un nouveau mot de passe.</p>
   <form id="f"><label for="em">E-mail</label><input type="email" id="em" autocomplete="username" required inputmode="email"><button class="main" id="go">Recevoir le lien</button><div class="msg" id="msg"></div></form>
@@ -72,7 +82,7 @@ function viewAccount(){document.title='Mon mot de passe · Carnet MEMB';
   <button class="main" id="go">Enregistrer</button><div class="msg" id="msg"></div></form><div class="links"><a href="/app">Retour au carnet</a><a href="/logout">Se déconnecter</a></div>`;
   $('#f').onsubmit=async e=>{e.preventDefault();if($('#pw').value!==$('#pw2').value)return msg('Les deux mots de passe ne sont pas identiques.');$('#go').disabled=true;try{await post('/api/password',{current:$('#cur').value,password:$('#pw').value});msg('Mot de passe changé.',true)}catch(x){msg(x.message)}$('#go').disabled=false}}
 const p=location.pathname,t=qs.get('t');
-if(p==='/bienvenue'&&t)viewToken(t,true);else if(p==='/mot-de-passe'&&t)viewToken(t,false);else if(p==='/mot-de-passe')viewForgot();else if(p==='/compte')viewAccount();else viewLogin();
+if(p==='/bienvenue'&&t)viewToken(t,true);else if(p==='/mot-de-passe'&&t)viewToken(t,false);else if(p==='/mot-de-passe')viewForgot();else if(p==='/compte')viewAccount();else if(p==='/inscription')viewSignup();else viewLogin();
 </script>
 </body>
 </html>

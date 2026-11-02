@@ -57,6 +57,7 @@ app.get('/login', page('login.html'));
 app.get('/mot-de-passe', page('login.html'));
 app.get('/bienvenue', page('login.html'));
 app.get('/confidentialite', page('confidentialite.html'));
+app.get('/inscription', (req, res) => { const u = auth.userFromReq(req); if (u) return res.redirect('/app'); res.sendFile(path.join(PUB, 'login.html')); });
 app.get('/compte', (req, res) => auth.userFromReq(req) ? res.sendFile(path.join(PUB, 'login.html')) : res.redirect('/login'));
 app.get('/app', (req, res) => { const u = auth.userFromReq(req); if (!u) return res.redirect('/login?next=/app'); res.setHeader('Cache-Control', 'no-cache'); res.sendFile(path.join(PUB, 'app.html')); });
 app.get('/admin', (req, res) => { const u = auth.userFromReq(req); if (!u) return res.redirect('/login?next=/admin'); if (!acl.MANAGERS.includes(u.role)) return res.redirect('/app'); res.setHeader('Cache-Control', 'no-cache'); res.sendFile(path.join(PUB, 'admin.html')); });
@@ -72,6 +73,8 @@ app.get('/_blob/:id', (req, res) => {
   for (const ext of ['jpg', 'png', 'webp']) { const f = path.join(BASE_BLOBS, id + '.' + ext); if (fs.existsSync(f)) { res.setHeader('Cache-Control', 'public, max-age=604800'); return res.sendFile(f); } }
   const u = auth.userFromReq(req); if (!u) return res.status(401).end();
   const a = db.prepare('SELECT * FROM assets WHERE id = ?').get(id);
+  const lim = db.prepare('SELECT * FROM asset_acl WHERE id = ?').get(id);
+  if (lim && !(acl.MANAGERS.includes(u.role) || (u.role === 'parent' && acl.parentChildren(u).includes(lim.cid)))) return res.status(403).end();
   const f = path.join(DATA_DIR, 'blobs', id);
   if (!a || !fs.existsSync(f)) return res.status(404).end();
   res.setHeader('Content-Type', a.mime); res.setHeader('Cache-Control', 'private, max-age=604800');
@@ -79,6 +82,25 @@ app.get('/_blob/:id', (req, res) => {
 });
 
 /* ---------------- Connexion ---------------- */
+/* Inscription d'une nouvelle famille : le parent crée son espace, puis remplit son dossier dans l'application */
+db.exec("CREATE TABLE IF NOT EXISTS asset_acl (id TEXT PRIMARY KEY, cid TEXT, kind TEXT)");
+app.post('/api/inscription', json, (req, res) => {
+  const k = 'insc:' + req.ip; if (auth.tooMany(k)) return res.status(429).json({ message: 'Trop de tentatives. Réessayez dans un moment.' });
+  auth.noteFail(k); auth.noteFail(k); /* 4 inscriptions maximum par adresse et par quart d'heure */
+  if (req.body.site) return res.json({ ok: true }); /* champ piège pour les robots */
+  const name = String(req.body.name || '').trim().slice(0, 80), email = String(req.body.email || '').trim().toLowerCase(), pw = String(req.body.password || '');
+  if (name.length < 3) return res.status(400).json({ message: 'Indiquez votre prénom et votre nom.' });
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return res.status(400).json({ message: 'Adresse e-mail invalide.' });
+  const pb = auth.passwordProblem(pw); if (pb) return res.status(400).json({ message: pb });
+  if (!req.body.accepte) return res.status(400).json({ message: 'Merci d’accepter la politique de confidentialité.' });
+  if (auth.getUserByEmail(email)) return res.status(400).json({ message: 'Un espace existe déjà avec cet e-mail. Connectez-vous ou utilisez « Mot de passe oublié ».' });
+  const id = auth.newUid();
+  db.prepare('INSERT INTO users(id,email,name,role,children,pass,active,created) VALUES (?,?,?,?,?,?,1,?)').run(id, email, name, 'parent', '[]', auth.hashPassword(pw), Date.now());
+  setDoc('dossiers/' + id, { uid: id, statut: 'brouillon', creeLe: Date.now(), parent: { nom: name, email } }, id);
+  audit(id, 'inscription', email, req.ip);
+  const t = auth.createSession(id, req); res.setHeader('Set-Cookie', auth.cookieHeader(t, SECURE)); res.json({ ok: true });
+});
+
 app.post('/api/login', json, (req, res) => {
   const email = String(req.body.email || '').trim().toLowerCase(), pw = String(req.body.password || '');
   const k1 = 'ip:' + req.ip, k2 = 'em:' + email;
@@ -215,6 +237,18 @@ app.post('/api/assets', needUser, (req, res, next) => req.u.role === 'parent' ? 
   fs.writeFileSync(path.join(DATA_DIR, 'blobs', id), req.body);
   db.prepare('INSERT INTO assets(id,mime,size,created,by) VALUES (?,?,?,?,?)').run(id, mime, req.body.length, Date.now(), req.u.id);
   res.json({ id, url: '/_blob/' + id, sizeBytes: req.body.length, contentType: mime });
+});
+app.post('/api/contrats/upload', needUser, needRole('admin', 'coordinatrice'), express.raw({ type: () => true, limit: '25mb' }), (req, res) => {
+  const mime = String(req.headers['content-type'] || '').split(';')[0]; const cid = String(req.query.cid || '');
+  if (!/^(image\/(jpeg|png|webp)|application\/pdf)$/.test(mime)) return res.status(400).json({ message: 'Envoyez un PDF ou une photo.' });
+  if (!getDoc('children/' + cid)) return res.status(400).json({ message: 'Enfant introuvable.' });
+  if (!req.body || !req.body.length) return res.status(400).json({ message: 'Fichier vide.' });
+  const id = crypto.randomBytes(16).toString('hex');
+  fs.writeFileSync(path.join(DATA_DIR, 'blobs', id), req.body);
+  db.prepare('INSERT INTO assets(id,mime,size,created,by) VALUES (?,?,?,?,?)').run(id, mime, req.body.length, Date.now(), req.u.id);
+  db.prepare('INSERT INTO asset_acl(id,cid,kind) VALUES (?,?,?)').run(id, cid, 'contrat');
+  audit(req.u.id, 'contrat-televerse', cid, req.ip);
+  res.json({ id, url: '/_blob/' + id, mime, size: req.body.length });
 });
 app.get('/api/assets', needUser, needRole('admin', 'coordinatrice'), (req, res) => res.json({ assets: db.prepare('SELECT id, mime contentType, size sizeBytes, created FROM assets ORDER BY created DESC LIMIT 1000').all().map(a => ({ ...a, url: '/_blob/' + a.id })) }));
 app.delete('/api/assets/:id', needUser, (req, res) => {
