@@ -5,3 +5,6 @@ data/
 sim-out/
 sim-out2/
 sim-out3/
+
+# Graphe graphify : reconstruit sur place (tools/graphify_demarrage.sh), jamais dans Git
+graphify-out/
