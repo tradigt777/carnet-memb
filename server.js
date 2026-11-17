@@ -196,6 +196,19 @@ app.post('/api/push/unsubscribe', json, needUser, (req, res) => { push.unsubscri
 app.post('/api/push/test', needUser, async (req, res) => res.json({ n: await push.toUser(req.u.id, { title: 'Carnet MEMB', body: 'Les notifications fonctionnent sur cet appareil.', url: '/app', tag: 'test' }) }));
 
 /* Distance routière entre deux adresses (forfait kilométrique) */
+/* Modifier le planning régulier d'un enfant en une fois */
+const planning = require('./lib/planning');
+app.post('/api/planning/creneaux', json, needUser, needRole('admin', 'coordinatrice', 'intervenante'), (req, res) => {
+  try { const { cid, depuis } = req.body || {}; planning.droit(req.u, String(cid || '')); res.json({ creneaux: planning.creneaux(String(cid), String(depuis || notifyLib.parisDate(Date.now()))) }); } catch (e) { fail(res, e); }
+});
+app.post('/api/planning/modifier', json, needUser, needRole('admin', 'coordinatrice', 'intervenante'), async (req, res) => {
+  try {
+    const b = req.body || {}; const cid = String(b.cid || ''); planning.droit(req.u, cid);
+    if (b.apercu) { const r = planning.calcule(cid, b); return res.json({ n: r.ops.length, ops: r.ops.slice(0, 200), resume: r.resume }); }
+    const r = await planning.applique(req.u, cid, b, notify); audit(req.u.id, 'planning', 'children/' + cid, req.ip);
+    res.json({ ok: true, n: r.n, resume: r.resume });
+  } catch (e) { fail(res, e); }
+});
 app.post('/api/route', json, needUser, needRole('admin', 'coordinatrice', 'intervenante'), async (req, res) => {
   const pairs = Array.isArray(req.body.pairs) ? req.body.pairs.slice(0, 40) : [[req.body.from, req.body.to]];
   try { const out = []; for (const [a, b] of pairs) out.push(await route.distance(String(a || '').slice(0, 300), String(b || '').slice(0, 300))); res.json({ results: out }); }
